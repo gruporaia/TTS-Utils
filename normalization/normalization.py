@@ -4,12 +4,12 @@ from abreviacoes import abreviacoes
 import sys
 import string
 
-def limpar_simbolos(texto):
-    texto = re.sub(r"http\S+", "", texto)  # Remove URLs
-    texto = re.sub(r"[^\w\s,.!?áéíóúãõâêôçÁÉÍÓÚÃÕÂÊÔÇ]", "", texto)  # Remove emojis e símbolos
-    return texto
+def clean_symbols(text):
+    text = re.sub(r"http\S+", "", text)  # Remove URLs
+    text = re.sub(r"[^\w\s,.!?áéíóúãõâêôçÁÉÍÓÚÃÕÂÊÔÇ]", "", text)  # Remove emojis e símbolos
+    return text
 
-def converter_moeda(texto):
+def converter_moeda(text):
     simbolos_moeda = {
         r'R\$': 'reais',
         r'USD': 'dólares',
@@ -53,74 +53,56 @@ def converter_moeda(texto):
                 inteiro = int(orig)
                 return f"{num2words(inteiro, lang='pt_BR')} {nome}"
 
-        texto = re.sub(padrao, substituir, texto)
+        text = re.sub(padrao, substituir, text)
 
-    return texto
+    return text
 
-def converter_numeros(texto):
+def convert_numbers(text):
     # 1. Casos de moeda com símbolos conhecidos
-    texto = converter_moeda(texto)
+    text = converter_moeda(text)
 
     # 2. Números colados a unidades (ex: 10kg → 10 kg). Só coloca espaço.
-    texto = re.sub(r'(\d+)(°?[a-zA-Z²³µ%]+)', r'\1 \2', texto)
+    text = re.sub(r'(\d+)(°?[a-zA-Z²³µ%]+)', r'\1 \2', text)
 
     # 3. Números com vírgula ou ponto → "dois vírgula cinco"
-    texto = re.sub(r'\b(\d+)[.,](\d+)\b', lambda m: f"{num2words(int(m.group(1)), lang='pt_BR')} vírgula {num2words(int(m.group(2)), lang='pt_BR')}", texto)
+    text = re.sub(r'\b(\d+)[,.](\d+)\b', lambda m: f"{num2words(int(m.group(1)), lang='pt_BR')} vírgula {num2words(int(m.group(2)), lang='pt_BR')}", text)
 
     # 4. Horários → "10:45 -> dez e quarenta e cinco"
-    texto = re.sub(r'\b([0-1]?\d|2[0-3]):00h?\b', lambda m: num2words(int(m.group(1)), lang='pt_BR'), texto)
-    texto = re.sub(r'\b(\d+)[:](\d+)\b', lambda m: f"{num2words(int(m.group(1)), lang='pt_BR')} e {num2words(int(m.group(2)), lang='pt_BR')}", texto)
+    text = re.sub(r'\b([0-1]?\d|2[0-3]):00h?\b', lambda m: num2words(int(m.group(1)), lang='pt_BR'), text)
+    text = re.sub(r'\b(\d+)[:](\d+)\b', lambda m: f"{num2words(int(m.group(1)), lang='pt_BR')} e {num2words(int(m.group(2)), lang='pt_BR')}", text)
 
     # 5. Números inteiros simples → por extenso
-    texto = re.sub(r'\b\d+\b', lambda m: num2words(int(m.group()), lang='pt_BR'), texto)
+    text = re.sub(r'\b\d+\b', lambda m: num2words(int(m.group()), lang='pt_BR'), text)
 
-    return texto
+    return text
 
-def expandir_abreviacoes(texto):
+def expand_abreviations(text):
     for abrev, exp in abreviacoes.items():
         padrao = r'(?<!\w)' + re.escape(abrev) + r'(?!\w)'
-        texto = re.sub(padrao, exp, texto)
-    return texto
+        text = re.sub(padrao, exp, text)
+    return text
 
-def corrigir_pontuacao_final(texto):
-    texto = texto.strip()
+def correct_final_ponctuation(text):
+    text = text.strip()
 
-    if not texto:
-        return texto
+    if not text:
+        return text
 
-    if texto[-1] in ['.', '?', '!']:
-        return texto
+    if text[-1] in ['.', '?', '!']:
+        return text
 
-    if texto[-1].isalpha():
-        return texto + '.'
+    if text[-1].isalpha():
+        return text + '.'
 
-    if texto[-1] in string.punctuation:
-        return texto[:-1] + '.'
+    if text[-1] in string.punctuation:
+        return text[:-1] + '.'
 
-    return texto
+    return text
 
-def main():
-    input_path = sys.argv[1]
-    output_path = sys.argv[2]
+def normalize_text(text):
+    text = convert_numbers(text)
+    text = expand_abreviations(text)
+    text = clean_symbols(text)
+    text = correct_final_ponctuation(text)
 
-    print(f"INPUT:{input_path}")
-    print(f"Output:{output_path}")
-
-    with open(input_path, 'r') as f:
-        texto = f.read()
-
-    #processamento dos dados
-    texto = converter_numeros(texto)
-    texto = expandir_abreviacoes(texto)
-    texto = limpar_simbolos(texto)
-    texto = corrigir_pontuacao_final(texto)
-
-    with open(output_path, 'w') as f:
-        f.write(texto)
-
-    return texto
-
-
-if __name__ == "__main__":
-    main()
-
+    return text
