@@ -1,5 +1,5 @@
 # Text To Speech Utils
-Aplicações de Text To Speech (TTS) muitas vezes dependem de recursos auxiliares, como métricas de avaliação, normalizador de textos e construtores de datasets. Esse repositório tem o intuito de disponibilizar código pronto para facilitar projetos em TTS em pt-br. Esta biblioteca conta com os seguintes módulos:
+Aplicações de TTS (Text-to-Speech) em português frequentemente exigem ferramentas auxiliares, como métricas de avaliação, normalização de texto e criação de datasets. Este repositório oferece implementações prontas para acelerar o desenvolvimento de projetos de TTS em pt-BR, com os seguintes módulos disponíveis:
 - Construtor automático de datasets a partir de áudios em português: a partir de arquivos de áudio brutos, são extraídas e transcritas frases, gerando um CSV com o texto e o caminho para cada trecho correspondente.
 - Normalização de texto: transforma frases com números, siglas, símbolos e abreviações em versões por extenso, facilitando a leitura por modelos de TTS.
 - Métricas de avaliação: este repositório tem código pronto para cálculo das métricas SECS, UTMOS e CER.
