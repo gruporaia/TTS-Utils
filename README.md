@@ -7,16 +7,13 @@ Aplicações de Text To Speech (TTS) muitas vezes dependem de recursos auxiliare
 ## 🛠️ Como usar
 
 ### Instalando dependências
-tall -r requirements.txt
 ```
-```bash
 pip install "git+https://github.com/gruporaia/TTS-Utils.git"
 ```
 ### Funcionamento
 
 #### Construtor Automático de Dataset
 ```
-```python
 from TTS_Utils import build_dataset
 
 input_path = "pasta_com_audio_bruto"
@@ -27,7 +24,6 @@ build_dataset(input_path, output_path)
 
 #### Normalização Textual
 ```
-```python
 from TTS_Utils import normalize_text
 
 texto = "Exemplo de texto com números: 10, 20.5, 30kg e 40%"
