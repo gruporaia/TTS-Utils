@@ -35,7 +35,7 @@ def SECS(ref_wav: Union[str, Path], gen_wav: Union[str, Path]) -> float:
 # Transcribe audio using Whisper
 def _asr_transcribe(audio: Union[str, Path], lang: str | None = None) -> str:
     # Load Whisper ASR model
-_   asr = whisper.load_model("tiny")
+    _asr = whisper.load_model("tiny")
     result = _asr.transcribe(str(audio), fp16=torch.cuda.is_available(), language=lang)
     return result["text"].strip()
 
