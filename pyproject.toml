@@ -18,10 +18,10 @@ dependencies = [
     "pydub==0.25.1",
     "pandas==2.2.3",
     "num2words==0.5.14",
-    "python-Levenshtein==0.27.1"
-    "torchaudio==2.6.0"
-    "librosa==0.11.0"
-    "git+https://github.com/sarulab-speech/UTMOSv2.git"
+    "python-Levenshtein==0.27.1",
+    "torchaudio==2.6.0",
+    "librosa==0.11.0",
+    "git+https://github.com/sarulab-speech/UTMOSv2.git",
 ]
 
 [project.urls]
