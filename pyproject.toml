@@ -1,4 +1,28 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core>=3.4"]
+build-backend = "flit_core.buildapi"
 
+[project]
+name = "TTS_Utils"
+version = "0.1.0"
+description = "Conjunto de ferramentas para processamento de áudio e texto em português para tarefas de Text-to-Speech (TTS)."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "RAIA - Rede de Avanço em Inteligência Artificial", email = "your@email.com" }
+]
+requires-python = ">= 3.9"
+dependencies = [
+    "openai-whisper==20240930",
+    "torch==2.6.0",
+    "pydub==0.25.1",
+    "pandas==2.2.3",
+    "num2words==0.5.14",
+    "python-Levenshtein==0.27.1",
+    "torchaudio==2.6.0",
+    "librosa==0.11.0",
+    "UTMOSv2@git+https://github.com/sarulab-speech/UTMOSv2.git",
+]
+
+[project.urls]
+Homepage = "https://github.com/gruporaia/TTS-Utils"

@@ -30,8 +30,6 @@ def SECS(ref_wav: Union[str, Path], gen_wav: Union[str, Path]) -> float:
 
     return float(np.dot(r_emb, g_emb) / (np.linalg.norm(r_emb) * np.linalg.norm(g_emb)))
 
-
-
 # Transcribe audio using Whisper
 def _asr_transcribe(audio: Union[str, Path], lang: str | None = None) -> str:
     # Load Whisper ASR model
@@ -44,8 +42,8 @@ def _strip_punct_and_symbols(txt: str) -> str:
     return "".join(ch for ch in txt if unicodedata.category(ch)[0] not in {"P", "S"})
 
 # Normalize text: lowercase, remove symbols, normalize spaces
-_ws_re = re.compile(r"\s+")
 def _norm(txt: str) -> str:
+    _ws_re = re.compile(r"\s+")
     txt = txt.lower()
     txt = _strip_punct_and_symbols(txt)
     return _ws_re.sub(" ", txt).strip()

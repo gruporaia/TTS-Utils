@@ -1,6 +1,6 @@
 from num2words import num2words
 import re
-from abreviacoes import abreviacoes
+from .abreviacoes import abreviacoes
 import sys
 import string
 
