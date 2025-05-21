@@ -22,6 +22,8 @@ dependencies = [
     "torchaudio==2.6.0",
     "librosa==0.11.0",
     "UTMOSv2@git+https://github.com/sarulab-speech/UTMOSv2.git",
+    "faster_whisper==1.1.1",
+    "huggingface_hub==0.31.4",
 ]
 
 [project.urls]
