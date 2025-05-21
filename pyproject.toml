@@ -22,3 +22,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/gruporaia/TTS-Utils"
+
+[tool.flit.metadata]
+module = "tts_utils"
