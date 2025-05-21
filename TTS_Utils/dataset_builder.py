@@ -1,77 +1,129 @@
-import whisper
+from faster_whisper import WhisperModel
 from pydub import AudioSegment
-from pydub.silence import split_on_silence
 import pandas as pd
 import os
 import glob
-import argparse
+import re
+from .normalization import normalize_text
 
 def build_dataset(input_dir, output_dir):
     # Load Whisper model
-    model = whisper.load_model("base")
+    model_size = "base"
+    model = WhisperModel(model_size, compute_type="int8" if model_size == "large" else "auto")
 
     # Directories
     audio_dir = os.path.join(output_dir, "wavs")
     os.makedirs(audio_dir, exist_ok=True)
 
-    # Silence detection parameters
-    min_silence_len = 900  # milliseconds
-    keep_silence = 400     # milliseconds
-    min_chunk_length = 2000
+    def match_target_amplitude(sound, target_dBFS):
+        change_in_dBFS = target_dBFS - sound.dBFS
+        return sound.apply_gain(change_in_dBFS)
 
-    # Process all MP3 and WAV files
-    audio_files = sorted(glob.glob(os.path.join(input_dir, "*.mp3")) + glob.glob(os.path.join(input_dir, "*.wav")))
+    def ends_with_punctuation(text):
+        return bool(re.search(r'[.!?](?:["”])?$|…$', text.strip()))
+
+    def split_text_into_phrases(text):
+        phrases = re.split(r'(?<=[.!?])\s+', text.strip())
+        return [phrase.strip() for phrase in phrases if phrase]
+
+    # Process audio files
+    audio_files = sorted(
+        glob.glob(os.path.join(input_dir, "**", "*.mp3"), recursive=True) +
+        glob.glob(os.path.join(input_dir, "**", "*.wav"), recursive=True)
+    )
 
     for audio_file in audio_files:
-        print(f"--> Processing {audio_file}")
-        # Load audio file, handle both MP3 and WAV
-        if audio_file.endswith(".mp3"):
-            audio = AudioSegment.from_mp3(audio_file)
-        else:
-            audio = AudioSegment.from_wav(audio_file)
+        print(f"Processing: {audio_file}")
+        base_name = os.path.splitext(os.path.basename(audio_file))[0]
 
-        # Calculate silence threshold for current file
-        silence_thresh = audio.dBFS - 14
+        # Load and preprocess audio
+        audio = AudioSegment.from_file(audio_file).set_channels(1).set_frame_rate(16000)
+        audio = audio.high_pass_filter(80)
+        #audio = match_target_amplitude(audio, -20.0)
 
-        # Split into chunks
-        audio_chunks = split_on_silence(
-            audio,
-            min_silence_len=min_silence_len,
-            silence_thresh=silence_thresh,
-            keep_silence=keep_silence
+        # Transcribe
+        segments, _ = model.transcribe(
+            audio_file,
+            language="pt",
+            vad_filter=False,
+            word_timestamps=False,
+            beam_size=5
         )
 
-        print(f"    Split into {len(audio_chunks)} chunks.")
+        # Build grouped phrases with timing
+        grouped_segments = []
+        current_group = []
+        group_start = None
 
-        file_metadata = []
-        file_basename = os.path.splitext(os.path.basename(audio_file))[0]
+        for seg in segments:
+            if not current_group:
+                group_start = seg.start
+            current_group.append(seg)
 
-        for i, chunk in enumerate(audio_chunks):
-            if len(chunk) < min_chunk_length:
-                continue
+            if ends_with_punctuation(seg.text):
+                full_text = " ".join(s.text.strip() for s in current_group)
+                phrases = split_text_into_phrases(full_text)
+                total_duration = sum(s.end - s.start for s in current_group)
 
-            sentence_id = f"{file_basename}_{str(i + 1).zfill(4)}"
-            chunk_path = os.path.join(audio_dir, f"{sentence_id}.wav")
+                if phrases:
+                    avg_duration = total_duration / len(phrases)
+                    for idx, phrase in enumerate(phrases):
+                        phrase_start = group_start + idx * avg_duration
+                        phrase_end = phrase_start + avg_duration
 
-            # Export chunk to disk as WAV
-            chunk.export(chunk_path, format="wav")
+                        # Apply transformations
+                        transformed = normalize_text(phrase)
 
-            # Transcribe chunk
-            result = model.transcribe(chunk_path, language="pt")
-            text = result['text'].strip()
+                        grouped_segments.append({
+                            "ID": f"{base_name}_{len(grouped_segments)+1:04d}",
+                            "start": round(phrase_start, 2),
+                            "end": round(phrase_end, 2),
+                            "text": phrase,
+                            "textCleaned": transformed.lower()
+                        })
 
-            file_metadata.append({
-                "ID": sentence_id,
-                "text": text,
-                "textCleaned": text.lower()
-            })
+                current_group = []
 
-        # Save metadata CSV for this file
-        file_df = pd.DataFrame(file_metadata)
-        file_csv_path = os.path.join(output_dir, f"metadata.csv")
-        file_df.to_csv(file_csv_path, sep="|", header=False, index=False, mode="a")
+        # Final leftover segment
+        if current_group:
+            group_start = current_group[0].start
+            full_text = " ".join(s.text.strip() for s in current_group)
+            phrases = split_text_into_phrases(full_text)
+            total_duration = sum(s.end - s.start for s in current_group)
 
-        print(f"    Transcriptions saved to: {file_csv_path}")
+            if phrases:
+                avg_duration = total_duration / len(phrases)
+                for idx, phrase in enumerate(phrases):
+                    phrase_start = group_start + idx * avg_duration
+                    phrase_end = phrase_start + avg_duration
 
-    print("\nAll files processed!")
+                    # Apply transformations
+                    transformed = normalize_text(phrase)
+
+                    grouped_segments.append({
+                        "ID": f"{base_name}_{len(grouped_segments)+1:04d}",
+                        "start": round(phrase_start, 2),
+                        "end": round(phrase_end, 2),
+                        "text": phrase,
+                        "textCleaned": transformed.lower()
+                    })
+
+        # Save metadata CSV
+        df = pd.DataFrame(grouped_segments)
+        csv_path = os.path.join(output_dir, f"{base_name}_metadata.csv")
+        df.to_csv(csv_path, sep="|", index=False, header=True)
+        print(f"Saved metadata to {csv_path}")
+
+        # Export each audio segment
+        for row in df.itertuples(index=False):
+            start_ms = int(row.start * 1000)
+            end_ms = int(row.end * 1000)
+
+            if end_ms > start_ms:
+                phrase_audio = audio[start_ms:end_ms]
+                chunk_path = os.path.join(audio_dir, f"{row.ID}.wav")
+                print(f"Exporting: {chunk_path}")
+                phrase_audio.export(chunk_path, format="wav", parameters=["-ar", "16000"])
+
+    print("Processing complete!")
 
