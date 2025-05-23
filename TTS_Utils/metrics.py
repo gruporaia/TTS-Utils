@@ -14,7 +14,7 @@ from Levenshtein import distance as _lev
 def UTMOS(audio_path: Union[str, Path]) -> float:
     wave, sr = librosa.load(audio_path, sr=None, mono=True)
     predictor = torch.hub.load("tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
-    return predictor(torch.from_numpy(wave).unsqueeze(0), sr)
+    return float(predictor(torch.from_numpy(wave).unsqueeze(0), sr))
 
 # Computes SECS (embedding similarity) between reference and generated audio
 def SECS(ref_wav: Union[str, Path], gen_wav: Union[str, Path]) -> float:
