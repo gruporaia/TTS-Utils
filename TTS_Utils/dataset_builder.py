@@ -15,10 +15,6 @@ def build_dataset(input_dir, output_dir):
     audio_dir = os.path.join(output_dir, "wavs")
     os.makedirs(audio_dir, exist_ok=True)
 
-    def match_target_amplitude(sound, target_dBFS):
-        change_in_dBFS = target_dBFS - sound.dBFS
-        return sound.apply_gain(change_in_dBFS)
-
     def ends_with_punctuation(text):
         return bool(re.search(r'[.!?](?:["”])?$|…$', text.strip()))
 
@@ -39,7 +35,6 @@ def build_dataset(input_dir, output_dir):
         # Load and preprocess audio
         audio = AudioSegment.from_file(audio_file).set_channels(1).set_frame_rate(16000)
         audio = audio.high_pass_filter(80)
-        #audio = match_target_amplitude(audio, -20.0)
 
         # Transcribe
         segments, _ = model.transcribe(
