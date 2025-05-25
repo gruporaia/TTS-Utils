@@ -17,7 +17,6 @@ dependencies = [
     "huggingface_hub==0.31.4",
     "librosa==0.11.0",
     "num2words==0.5.14",
-    "openai_whisper==20240930",
     "pandas==2.2.3",
     "pydub==0.25.1",
     "python-Levenshtein==0.27.1",
