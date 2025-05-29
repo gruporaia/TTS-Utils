@@ -28,6 +28,8 @@ def build_dataset(input_dir, output_dir):
         glob.glob(os.path.join(input_dir, "**", "*.wav"), recursive=True)
     )
 
+    all_metadata = []
+
     for audio_file in audio_files:
         print(f"Processing: {audio_file}")
         base_name = os.path.splitext(os.path.basename(audio_file))[0]
@@ -66,20 +68,19 @@ def build_dataset(input_dir, output_dir):
                         phrase_start = group_start + idx * avg_duration
                         phrase_end = phrase_start + avg_duration
 
-                        # Apply transformations
                         transformed = normalize_text(phrase)
 
-                        grouped_segments.append({
+                        segment_data = {
                             "ID": f"{base_name}_{len(grouped_segments)+1:04d}",
                             "start": round(phrase_start, 2),
                             "end": round(phrase_end, 2),
                             "text": phrase,
                             "textCleaned": transformed.lower()
-                        })
+                        }
+                        grouped_segments.append(segment_data)
 
                 current_group = []
 
-        # Final leftover segment
         if current_group:
             group_start = current_group[0].start
             full_text = " ".join(s.text.strip() for s in current_group)
@@ -92,22 +93,19 @@ def build_dataset(input_dir, output_dir):
                     phrase_start = group_start + idx * avg_duration
                     phrase_end = phrase_start + avg_duration
 
-                    # Apply transformations
                     transformed = normalize_text(phrase)
 
-                    grouped_segments.append({
+                    segment_data = {
                         "ID": f"{base_name}_{len(grouped_segments)+1:04d}",
                         "start": round(phrase_start, 2),
                         "end": round(phrase_end, 2),
                         "text": phrase,
                         "textCleaned": transformed.lower()
-                    })
+                    }
+                    grouped_segments.append(segment_data)
 
-        # Save metadata CSV
+        # Create DataFrame
         df = pd.DataFrame(grouped_segments)
-        csv_path = os.path.join(output_dir, f"{base_name}_metadata.csv")
-        df.to_csv(csv_path, sep="|", index=False, header=True)
-        print(f"Saved metadata to {csv_path}")
 
         # Export each audio segment
         for row in df.itertuples(index=False):
@@ -120,5 +118,14 @@ def build_dataset(input_dir, output_dir):
                 print(f"Exporting: {chunk_path}")
                 phrase_audio.export(chunk_path, format="wav", parameters=["-ar", "16000"])
 
-    print("Processing complete!")
+        # Drop timestamp columns and append to all_metadata
+        df = df.drop(columns=["start", "end"])
+        all_metadata.append(df)
 
+    # Combine all metadata and save final CSV
+    final_df = pd.concat(all_metadata, ignore_index=True)
+    final_csv_path = os.path.join(output_dir, "metadata.csv")
+    final_df.to_csv(final_csv_path, sep="|", index=False, header=True)
+    print(f"Saved final metadata to {final_csv_path}")
+
+    print("Processing complete!")
