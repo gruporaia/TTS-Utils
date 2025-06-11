@@ -4,7 +4,7 @@ Aplicações de TTS (Text-to-Speech) em português frequentemente exigem ferrame
 - Normalização de texto: transforma frases com números, siglas, símbolos e abreviações em versões por extenso, facilitando a leitura por modelos de TTS.
 - Métricas de avaliação: este repositório tem código pronto para cálculo das métricas SECS, UTMOS e CER.
 
-**Confira nossa aplicação que utiliza esses componentes para elaborar um pipeline automático de finetuning de modelos TTS, a [TTS-AutoTune]()**.
+**Confira nossa aplicação que utiliza esses componentes para elaborar um pipeline automático de finetuning de modelos TTS, a [TTS-AutoTuning](https://github.com/gruporaia/TTS-AutoTuning)**.
 
 ## 🛠️ Como usar
 
